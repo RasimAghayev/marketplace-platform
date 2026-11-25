@@ -1,0 +1,224 @@
+```mermaid
+flowchart TB
+    %% External Actors
+    Customer((Customer)):::actor
+    Merchant((Store Owner)):::actor
+    Courier((Courier)):::actor
+    PlatformAdmin((Platform Admin)):::actor
+
+    %% External Systems
+    PaymentProvider[Payment Provider]:::external
+    OAuthProvider[OAuth Provider]:::external
+    EmailService[Email Service]:::external
+
+    %% System Boundary
+    subgraph MarketplacePlatform [Marketplace Platform]
+        
+        subgraph Frontend [Client Applications]
+            CustomerWeb[Customer Web<br/>Next.js 15 / React 19 / TypeScript]:::frontend
+            MerchantWeb[Merchant Web<br/>Next.js 15 / React 19 / TypeScript]:::frontend
+            CourierWeb[Courier Web<br/>Next.js 15 / React 19 / TypeScript]:::frontend
+            AdminWeb[Admin Web<br/>Next.js 15 / React 19 / TypeScript]:::frontend
+        end
+
+        subgraph Backend [API Tier]
+            API[API Server<br/>Go 1.23 / Chi / gRPC / GraphQL]:::backend
+            Worker[Background Worker<br/>Go 1.23 / NATS Consumer]:::backend
+            Migrate[Migration CLI<br/>Go 1.23]:::backend
+            Seed[Seed CLI<br/>Go 1.23]:::backend
+        end
+
+        subgraph Modules [Bounded Context Modules]
+            Auth[Auth<br/>Identity, OAuth, MFA, Sessions]:::module
+            Platform[Platform<br/>Tenancy, Orgs, Feature Flags, Audit]:::module
+            Stores[Stores<br/>Store CRUD, Settings, Hours, Zones, Staff]:::module
+            Catalog[Catalog<br/>Categories, Products, Variants, Pricing, Media]:::module
+            Orders[Orders<br/>Cart, Checkout, Order Lifecycle, Idempotency]:::module
+            Payments[Payments<br/>Provider Abstraction, Auth/Capture, Refunds]:::module
+            Inventory[Inventory<br/>Stock, Reservations, Movements, Suppliers]:::module
+            Delivery[Delivery<br/>Zones, Couriers, Assignment, GPS, ETA]:::module
+            Notifications[Notifications<br/>Email, Push, SMS, In-app, Preferences]:::module
+            Loyalty[Loyalty<br/>Points, Tiers, Cashback, Referrals]:::module
+            Analytics[Analytics<br/>Events, Dashboards, Reports, BI Export]:::module
+        end
+
+        subgraph Shared [Shared Infrastructure]
+            Config[Configuration<br/>Viper / Env]:::shared
+            Logging[Logging<br/>zerolog / Structured]:::shared
+            Errors[Error Handling]:::shared
+            Events[Event Types & Outbox]:::shared
+            Middleware[Middleware<br/>Auth, CORS, Rate Limiting, Tracing]:::shared
+        end
+
+        subgraph Infrastructure [Infrastructure Adapters]
+            PGAdapter[PostgreSQL Adapter<br/>pgx / Connection Pool]:::adapter
+            MongoAdapter[MongoDB Adapter<br/>mongo-driver]:::adapter
+            RedisAdapter[Redis Adapter<br/>go-redis]:::adapter
+            NATSAdapter[NATS Adapter<br/>nats.go / JetStream]:::adapter
+        end
+
+        subgraph Data [Data Stores]
+            PostgreSQL[(PostgreSQL 16<br/>Primary / ACID)]:::database
+            MongoDB[(MongoDB 7<br/>Documents / Audit)]:::database
+            Redis[(Redis 7<br/>Cache / Sessions / Rate Limit)]:::cache
+            NATS[(NATS JetStream<br/>Event Streaming)]:::broker
+        end
+
+        subgraph Observability [Observability]
+            Prometheus[Prometheus]:::observability
+            Grafana[Grafana]:::observability
+            Loki[Loki]:::observability
+            Jaeger[Jaeger]:::observability
+        end
+    end
+
+    %% Relationships
+    Customer <-->|HTTPS| CustomerWeb
+    Merchant <-->|HTTPS| MerchantWeb
+    Courier <-->|HTTPS| CourierWeb
+    PlatformAdmin <-->|HTTPS| AdminWeb
+
+    CustomerWeb <-->|tRPC| API
+    MerchantWeb <-->|tRPC| API
+    CourierWeb <-->|tRPC| API
+    AdminWeb <-->|tRPC| API
+
+    API <--> Auth
+    API <--> Platform
+    API <--> Stores
+    API <--> Catalog
+    API <--> Orders
+    API <--> Payments
+    API <--> Inventory
+    API <--> Delivery
+    API <--> Notifications
+    API <--> Loyalty
+    API <--> Analytics
+
+    Worker <--> NATSAdapter
+    Worker <--> Orders
+    Worker <--> Payments
+    Worker <--> Inventory
+    Worker <--> Delivery
+    Worker <--> Notifications
+
+    Auth --> Config
+    Auth --> Logging
+    Auth --> Errors
+    Auth --> Events
+    Auth --> Middleware
+
+    Platform --> Config
+    Platform --> Logging
+    Platform --> Errors
+    Platform --> Events
+    Platform --> Middleware
+
+    Stores --> Config
+    Stores --> Logging
+    Stores --> Errors
+    Stores --> Events
+    Stores --> Middleware
+
+    Catalog --> Config
+    Catalog --> Logging
+    Catalog --> Errors
+    Catalog --> Events
+    Catalog --> Middleware
+
+    Orders --> Config
+    Orders --> Logging
+    Orders --> Errors
+    Orders --> Events
+    Orders --> Middleware
+
+    Payments --> Config
+    Payments --> Logging
+    Payments --> Errors
+    Payments --> Events
+    Payments --> Middleware
+
+    Inventory --> Config
+    Inventory --> Logging
+    Inventory --> Errors
+    Inventory --> Events
+    Inventory --> Middleware
+
+    Delivery --> Config
+    Delivery --> Logging
+    Delivery --> Errors
+    Delivery --> Events
+    Delivery --> Middleware
+
+    Notifications --> Config
+    Notifications --> Logging
+    Notifications --> Errors
+    Notifications --> Events
+    Notifications --> Middleware
+
+    Loyalty --> Config
+    Loyalty --> Logging
+    Loyalty --> Errors
+    Loyalty --> Events
+    Loyalty --> Middleware
+
+    Analytics --> Config
+    Analytics --> Logging
+    Analytics --> Errors
+    Analytics --> Events
+    Analytics --> Middleware
+
+    Auth --> PGAdapter
+    Platform --> PGAdapter
+    Stores --> PGAdapter
+    Catalog --> PGAdapter
+    Catalog --> MongoAdapter
+    Orders --> PGAdapter
+    Orders --> MongoDB
+    Payments --> PGAdapter
+    Inventory --> PGAdapter
+    Delivery --> RedisAdapter
+    Delivery --> MongoDB
+    Notifications --> PGAdapter
+    Notifications --> MongoDB
+    Loyalty --> PGAdapter
+    Analytics --> MongoDB
+
+    PGAdapter --> PostgreSQL
+    MongoAdapter --> MongoDB
+    RedisAdapter --> Redis
+    NATSAdapter --> NATS
+
+    Auth --> NATSAdapter
+    Stores --> NATSAdapter
+    Catalog --> NATSAdapter
+    Orders --> NATSAdapter
+    Payments --> NATSAdapter
+    Inventory --> NATSAdapter
+    Delivery --> NATSAdapter
+    Notifications --> NATSAdapter
+    Loyalty --> NATSAdapter
+    Analytics --> NATSAdapter
+
+    Payments --> PaymentProvider
+    Auth --> OAuthProvider
+    Notifications --> EmailService
+
+    API --> Prometheus
+    Worker --> Prometheus
+    Backend --> Loki
+    Backend --> Jaeger
+    Prometheus --> Grafana
+
+    classDef actor fill:#f9d79b,stroke:#e67e22,stroke-width:2px
+    classDef external fill:#aed6f1,stroke:#3498db,stroke-width:2px
+    classDef frontend fill:#d5f5e3,stroke:#27ae60,stroke-width:2px
+    classDef backend fill:#fdebd0,stroke:#f39c12,stroke-width:2px
+    classDef module fill:#ffeaa7,stroke:#f1c40f,stroke-width:1px
+    classDef shared fill:#e8f8f5,stroke:#16a085,stroke-width:1px
+    classDef adapter fill:#f9ebea,stroke:#c0392b,stroke-width:1px
+    classDef database fill:#d1f2eb,stroke:#1abc9c,stroke-width:2px
+    classDef cache fill:#d1f2eb,stroke:#1abc9c,stroke-width:2px
+    classDef broker fill:#d1f2eb,stroke:#1abc9c,stroke-width:2px
+    classDef observability fill:#d7bde2,stroke:#8e44ad,stroke-width:2px
+```
