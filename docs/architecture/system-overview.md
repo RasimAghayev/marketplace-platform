@@ -1,55 +1,59 @@
-# System Architecture
+# System Overview
 
-## Overview
+## Architecture Style
 
-The Marketplace Platform is a production-ready, event-driven, multi-tenant marketplace built as a modular monolith with Clean Architecture and DDD principles.
+**Modular Monolith + Event-Driven Architecture (EDA)**
+
+The platform is deployed as a single deployable unit (modular monolith) with clear bounded context boundaries. Internally, modules communicate asynchronously via NATS JetStream events and synchronously via direct in-process calls where appropriate.
+
+## Architectural Patterns
+
+| Pattern | Usage |
+|---------|-------|
+| Clean Architecture | Each module follows dependency rule: domain → application → infrastructure |
+| DDD Bounded Contexts | 11 bounded contexts with clear boundaries |
+| Repository Pattern | Data access abstracted behind repository interfaces |
+| Dependency Injection | Wire/Fx for DI container |
+| Outbox Pattern | Reliable event publishing (PostgreSQL → NATS) |
+| Event Sourcing | Order event history in MongoDB |
+| CQRS (light) | Read models separate from write models where needed |
+| State Machine | Order lifecycle with strict transitions |
+| Circuit Breaker | External service calls (payment providers) |
+| Retry with Backoff | Failed event processing |
+| Dead Letter Queue | Unprocessable events |
+
+## Component Diagram
+
+See `docs/diagrams/component.mmd` for module-level component diagram.
+
+## Container Diagram
+
+See `docs/diagrams/container.mmd` for container-level diagram.
+
+## System Context Diagram
+
+See `docs/diagrams/system-context.mmd` for system context with external actors and systems.
 
 ## Technology Stack
 
-| Area | Choice | Rationale |
-|------|--------|-----------|
-| Backend | Go 1.23+, Chi | Performance, concurrency, strong typing |
-| Frontend | Next.js 15, React 19, TypeScript, Tailwind, tRPC | Full-stack React, type-safe APIs |
-| Databases | PostgreSQL (primary), MongoDB (documents), Redis (hot) | Polyglot persistence per responsibility |
-| Messaging | NATS JetStream | Lightweight, streaming, exactly-once, JetStream persistence |
-| Containers | Docker, Docker Compose | Local → prod parity |
-| CI/CD | GitHub Actions, Dependabot | Native, secure, automated |
-| Observability | Prometheus, Grafana, Loki, OpenTelemetry, Jaeger | Full stack |
+See `docs/adr/0001-technology-stack.md` for full stack selection rationale.
 
-## Bounded Contexts
+## Domain Boundaries
 
-1. **Platform** — Tenancy, organizations, feature flags, audit, global settings
-2. **Auth** — Identity, OAuth (Google, Apple, GitHub), MFA, sessions, tokens
-3. **Stores** — Store CRUD, settings, hours, zones, staff, multi-location
-4. **Catalog** — Categories, products, variants, pricing, media, SEO
-5. **Orders** — Cart, checkout, order lifecycle, state machine, idempotency keys
-6. **Payments** — Provider abstraction, auth/capture, refunds, reconciliation, webhooks
-7. **Inventory** — Stock levels, reservations, movements, bundles, suppliers
-8. **Delivery** — Zones, couriers, assignment, GPS tracking, ETA
-9. **Notifications** — Email, Push, SMS, In-app; preferences, retry, DLQ
-10. **Loyalty** — Points, tiers, cashback, referrals, campaigns
-11. **Analytics** — Events, dashboards, reports, BI export
+See `docs/architecture/domain-boundaries.md` for bounded context definitions, entities, aggregates, events, and dependencies.
 
-## Roles
+## Security Architecture
 
-Platform Admin, Org Owner, Store Manager, Store Staff, Courier, Customer, Support.
+See `docs/security/security-architecture.md` for authentication, authorization, RBAC, ABAC, and security controls.
 
-RBAC + ABAC (store-level isolation).
+## Data Architecture
 
-## Order State Machine
+See `docs/adr/0002-database-matrix.md` for database responsibility matrix.
 
-`DRAFT → PENDING_PAYMENT → CONFIRMED → ACCEPTED → PREPARING → READY → COURIER_ASSIGNED → PICKED_UP → ON_THE_WAY → DELIVERED`
+## Event Architecture
 
-Additional: `PAYMENT_FAILED`, `CANCELLED`, `REFUND_PENDING`, `REFUNDED`.
+See `docs/adr/0003-messaging.md` for NATS JetStream messaging architecture.
 
-## Messaging Subjects
+## Review Date
 
-- `marketplace.orders.*`
-- `marketplace.payments.*`
-- `marketplace.inventory.*`
-- `marketplace.delivery.*`
-- `marketplace.notifications.*`
-
-## Event Examples
-
-`StoreCreated`, `ProductPublished`, `OrderPlaced`, `PaymentAuthorized`, `PaymentFailed`, `InventoryReserved`, `CourierAssigned`, `DeliveryStarted`, `OrderDelivered`, `OrderCancelled`, `RefundProcessed`, `LoyaltyPointsAdded`.
+2026-12-25
