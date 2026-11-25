@@ -1,12 +1,11 @@
 FROM golang:1.23-alpine AS base
 RUN apk add --no-cache git ca-certificates tzdata
 WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
+COPY go.mod ./
 
 FROM base AS deps
 COPY . .
-RUN go mod download
+RUN go mod tidy && go mod download
 
 FROM base AS build
 COPY --from=deps /app /app
