@@ -101,7 +101,7 @@ jobs:
           docker compose run --rm frontend /bin/sh -c "cd /app && npm audit || true"
 
       - name: Run Trivy container scan
-        uses: aquasecurity/trivy-action@v0.22.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
           skip-dirs: /backend/node_modules
