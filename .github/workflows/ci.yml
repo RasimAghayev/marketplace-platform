@@ -70,14 +70,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build backend image
-        uses: docker/build-push-action@v6.5.0
+        uses: docker/build-push-action@v7.4.0
         with:
           context: ./backend
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
 
       - name: Build frontend image
-        uses: docker/build-push-action@v6.5.0
+        uses: docker/build-push-action@v7.4.0
         with:
           context: ./frontend
           push: ${{ github.ref == 'refs/heads/main' }}
