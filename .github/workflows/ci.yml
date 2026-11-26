@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [preview, test, main]
+  pull_request:
+    branches: [preview, test, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  COMPOSE_PROJECT_NAME: marketplace-platform-ci
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Run Go lint
+        run: |
+          docker compose run --rm backend /bin/sh -c "cd /app && golangci-lint run ./... || true"
+
+      - name: Run frontend lint
+        run: |
+          docker compose run --rm frontend /bin/sh -c "cd /app && npm run lint || true"
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Run backend tests
+        run: |
+          docker compose run --rm backend /bin/sh -c "cd /app && go test ./..."
+
+      - name: Run frontend tests
+        run: |
+          docker compose run --rm frontend /bin/sh -c "cd /app && npm test -- --run"
+
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.3.0
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6.5.0
+        with:
+          context: ./backend
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6.5.0
+        with:
+          context: ./frontend
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
+
+  security:
+    name: Security Scans
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+
+      - name: Run gosec
+        run: |
+          docker compose run --rm backend /bin/sh -c "cd /app && gosec ./... || true"
+
+      - name: Run npm audit
+        run: |
+          docker compose run --rm frontend /bin/sh -c "cd /app && npm audit || true"
+
+      - name: Run Trivy container scan
+        uses: aquasecurity/trivy-action@v0.22.0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
+          skip-dirs: /backend/node_modules
+          skip-files: go.sum
+          format: table
+          exit-code: 1

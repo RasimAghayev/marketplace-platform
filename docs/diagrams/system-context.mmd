@@ -1,0 +1,128 @@
+```mermaid
+flowchart TB
+    %% External Actors
+    Customer((Customer)):::actor
+    Merchant((Store Owner)):::actor
+    Courier((Courier)):::actor
+    Support((Support Agent)):::actor
+    PlatformAdmin((Platform Admin)):::actor
+
+    %% External Systems
+    PaymentProvider[Payment Provider<br/>Stripe / Adyen]:::external
+    EmailService[Email Service]:::external
+    SMSService[SMS Service]:::external
+    PushService[Push Notification Service]:::external
+    OAuthProvider[OAuth Provider<br/>Google / Apple / GitHub]:::external
+
+    %% System Boundary
+    subgraph MarketplacePlatform [Marketplace Platform]
+        direction TB
+        
+        subgraph Frontend [Frontend Tier]
+            CustomerWeb[Customer Web<br/>Next.js]:::frontend
+            MerchantWeb[Merchant Web<br/>Next.js]:::frontend
+            CourierWeb[Courier Web<br/>Next.js]:::frontend
+            AdminWeb[Admin Web<br/>Next.js]:::frontend
+        end
+
+        subgraph Backend [Backend Tier - Go Modular Monolith]
+            API[API Gateway<br/>Chi Router]:::backend
+            Auth[Auth Module]:::module
+            Platform[Platform Module]:::module
+            Stores[Stores Module]:::module
+            Catalog[Catalog Module]:::module
+            Orders[Orders Module]:::module
+            Payments[Payments Module]:::module
+            Inventory[Inventory Module]:::module
+            Delivery[Delivery Module]:::module
+            Notifications[Notifications Module]:::module
+            Loyalty[Loyalty Module]:::module
+            Analytics[Analytics Module]:::module
+        end
+
+        subgraph Data [Data Tier]
+            PostgreSQL[(PostgreSQL<br/>Primary / ACID)]:::database
+            MongoDB[(MongoDB<br/>Documents / Audit)]:::database
+            Redis[(Redis<br/>Cache / Hot Data)]:::cache
+            NATS[(NATS JetStream<br/>Event Streaming)]:::broker
+        end
+
+        subgraph Observability [Observability Tier]
+            Prometheus[Prometheus]:::observability
+            Grafana[Grafana]:::observability
+            Loki[Loki]:::observability
+            Jaeger[Jaeger]:::observability
+        end
+    end
+
+    %% Relationships
+    Customer <-->|HTTP/HTTPS| CustomerWeb
+    Merchant <-->|HTTP/HTTPS| MerchantWeb
+    Courier <-->|HTTP/HTTPS| CourierWeb
+    Support <-->|HTTP/HTTPS| AdminWeb
+    PlatformAdmin <-->|HTTP/HTTPS| AdminWeb
+
+    CustomerWeb <-->|tRPC/REST| API
+    MerchantWeb <-->|tRPC/REST| API
+    CourierWeb <-->|tRPC/REST| API
+    AdminWeb <-->|tRPC/REST| API
+
+    API <--> Auth
+    API <--> Platform
+    API <--> Stores
+    API <--> Catalog
+    API <--> Orders
+    API <--> Payments
+    API <--> Inventory
+    API <--> Delivery
+    API <--> Notifications
+    API <--> Loyalty
+    API <--> Analytics
+
+    Auth <--> PostgreSQL
+    Platform <--> PostgreSQL
+    Stores <--> PostgreSQL
+    Catalog <--> PostgreSQL
+    Catalog <--> MongoDB
+    Orders <--> PostgreSQL
+    Orders <--> MongoDB
+    Payments <--> PostgreSQL
+    Inventory <--> PostgreSQL
+    Delivery <--> Redis
+    Delivery <--> MongoDB
+    Notifications <--> PostgreSQL
+    Notifications <--> MongoDB
+    Loyalty <--> PostgreSQL
+    Analytics <--> MongoDB
+
+    Auth <--> NATS
+    Stores <--> NATS
+    Catalog <--> NATS
+    Orders <--> NATS
+    Payments <--> NATS
+    Inventory <--> NATS
+    Delivery <--> NATS
+    Notifications <--> NATS
+    Loyalty <--> NATS
+
+    Payments -->|Webhooks/API| PaymentProvider
+    Notifications -->|SMTP/API| EmailService
+    Notifications -->|API| SMSService
+    Notifications -->|API| PushService
+    Auth -->|OAuth| OAuthProvider
+
+    Backend --> Prometheus
+    Backend --> Loki
+    Backend --> Jaeger
+    Prometheus --> Grafana
+
+    classDef actor fill:#f9d79b,stroke:#e67e22,stroke-width:2px
+    classDef external fill:#aed6f1,stroke:#3498db,stroke-width:2px
+    classDef frontend fill:#d5f5e3,stroke:#27ae60,stroke-width:2px
+    classDef backend fill:#fdebd0,stroke:#f39c12,stroke-width:2px
+    classDef module fill:#ffeaa7,stroke:#f1c40f,stroke-width:1px
+    classDef database fill:#d1f2eb,stroke:#1abc9c,stroke-width:2px
+    classDef cache fill:#d1f2eb,stroke:#1abc9c,stroke-width:2px
+    classDef broker fill:#d1f2eb,stroke:#1abc9c,stroke-width:2px
+    classDef observability fill:#d7bde2,stroke:#8e44ad,stroke-width:2px
+```

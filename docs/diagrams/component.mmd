@@ -1,0 +1,108 @@
+```mermaid
+flowchart LR
+    %% Auth Module Components
+    subgraph Auth [Auth Module]
+        direction TB
+        AuthHandler[Auth Handler<br/>HTTP / gRPC]:::component
+        AuthService[Auth Service<br/>Business Logic]:::component
+        AuthRepository[Auth Repository<br/>PostgreSQL]:::component
+        AuthEvents[Auth Events<br/>UserRegistered, UserAuthenticated]:::component
+    end
+
+    %% Stores Module Components
+    subgraph Stores [Stores Module]
+        direction TB
+        StoresHandler[Stores Handler]:::component
+        StoresService[Stores Service]:::component
+        StoresRepository[Stores Repository]:::component
+        StoresEvents[Stores Events<br/>StoreCreated, StoreUpdated]:::component
+    end
+
+    %% Catalog Module Components
+    subgraph Catalog [Catalog Module]
+        direction TB
+        CatalogHandler[Catalog Handler]:::component
+        CatalogService[Catalog Service]:::component
+        CatalogRepository[Catalog Repository]:::component
+        CatalogEvents[Catalog Events<br/>ProductPublished, ProductUpdated]:::component
+    end
+
+    %% Orders Module Components
+    subgraph Orders [Orders Module]
+        direction TB
+        OrdersHandler[Orders Handler]:::component
+        OrdersService[Orders Service<br/>State Machine]:::component
+        OrdersRepository[Orders Repository]:::component
+        OrdersOutbox[Orders Outbox<br/>PostgreSQL → NATS]:::component
+        OrdersEvents[Orders Events<br/>OrderPlaced, OrderCancelled]:::component
+    end
+
+    %% Payments Module Components
+    subgraph Payments [Payments Module]
+        direction TB
+        PaymentsHandler[Payments Handler]:::component
+        PaymentsService[Payments Service]:::component
+        PaymentsRepository[Payments Repository]:::component
+        PaymentsOutbox[Payments Outbox]:::component
+        PaymentsEvents[Payments Events<br/>PaymentAuthorized, PaymentFailed]:::component
+    end
+
+    %% Shared Components
+    subgraph Shared [Shared]
+        direction TB
+        Config[Config<br/>Viper]:::shared
+        Logging[Logging<br/>zerolog]:::shared
+        Middleware[Middleware<br/>Auth, CORS, RateLimit]:::shared
+        Events[Event Types]:::shared
+    end
+
+    %% Relationships within Auth
+    AuthHandler --> AuthService
+    AuthService --> AuthRepository
+    AuthService --> AuthEvents
+
+    %% Relationships within Stores
+    StoresHandler --> StoresService
+    StoresService --> StoresRepository
+    StoresService --> StoresEvents
+
+    %% Relationships within Catalog
+    CatalogHandler --> CatalogService
+    CatalogService --> CatalogRepository
+    CatalogService --> CatalogEvents
+
+    %% Relationships within Orders
+    OrdersHandler --> OrdersService
+    OrdersService --> OrdersRepository
+    OrdersService --> OrdersOutbox
+    OrdersService --> OrdersEvents
+    OrdersOutbox --> OrdersEvents
+
+    %% Relationships within Payments
+    PaymentsHandler --> PaymentsService
+    PaymentsService --> PaymentsRepository
+    PaymentsService --> PaymentsOutbox
+    PaymentsService --> PaymentsEvents
+    PaymentsOutbox --> PaymentsEvents
+
+    %% Cross-module dependencies
+    Orders -.->|depends on| Auth
+    Orders -.->|depends on| Stores
+    Orders -.->|depends on| Catalog
+    Payments -.->|depends on| Orders
+    Payments -.->|depends on| Auth
+    Inventory -.->|depends on| Catalog
+    Delivery -.->|depends on| Orders
+    Notifications -.->|depends on| Orders
+    Loyalty -.->|depends on| Orders
+
+    %% Shared dependencies
+    Auth --> Shared
+    Stores --> Shared
+    Catalog --> Shared
+    Orders --> Shared
+    Payments --> Shared
+
+    classDef component fill:#d5f5e3,stroke:#27ae60,stroke-width:1px
+    classDef shared fill:#e8f8f5,stroke:#16a085,stroke-width:1px
+```

@@ -1,0 +1,33 @@
+name: Branch Protection Validation
+
+on:
+  pull_request:
+    branches: [main, test]
+
+jobs:
+  validate-source-branch:
+    name: Validate Source Branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate PR source branch for main
+        if: github.base_ref == 'refs/heads/main'
+        run: |
+          head_ref="${{ github.head_ref }}"
+          echo "PR head ref: $head_ref"
+          if [[ "$head_ref" != "refs/heads/test" ]]; then
+            echo "ERROR: main can only accept PRs from test branch"
+            exit 1
+          fi
+          echo "Source branch validation passed: PR from test to main"
+
+      - name: Validate PR source branch for test
+        if: github.base_ref == 'refs/heads/test'
+        run: |
+          head_ref="${{ github.head_ref }}"
+          echo "PR head ref: $head_ref"
+          if [[ ! "$head_ref" =~ ^(refs/heads/feature/|refs/heads/preview|refs/heads/test)$ ]]; then
+            echo "ERROR: test can only accept PRs from feature/*, preview, or test"
+            exit 1
+          fi
+          echo "Source branch validation passed"

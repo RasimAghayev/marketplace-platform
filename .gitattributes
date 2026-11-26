@@ -1,0 +1,30 @@
+* text=auto
+
+*.md text
+*.json text
+*.yml text
+*.yaml text
+*.go text
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.css text
+*.scss text
+*.html text
+*.dockerignore text
+Dockerfile text
+*.toml text
+*.lock text
+*.env.example text
+*.gitignore text
+*.gitattributes text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.svg binary

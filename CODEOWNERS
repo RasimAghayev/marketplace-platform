@@ -1,0 +1,19 @@
+# Code Owners
+
+# Default owners for all files
+*       @RasimAghayev
+
+# Backend (Go)
+/backend/     @RasimAghayev
+
+# Frontend (Next.js)
+/frontend/    @RasimAghayev
+
+# Infrastructure
+/infrastructure/  @RasimAghayev
+
+# Documentation
+/docs/        @RasimAghayev
+
+# GitHub workflows
+/.github/     @RasimAghayev
