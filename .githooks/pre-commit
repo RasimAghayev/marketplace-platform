@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+# Pre-commit secret scan (CLAUDE.md "Security and secrets" standard).
+#
+# Enable once per clone with:
+#   git config core.hooksPath .githooks
+#
+# Requires gitleaks (https://github.com/gitleaks/gitleaks) on PATH. If it is
+# not installed, the hook warns but does not block the commit — the CI
+# secret-scan job (Phase 10) is the hard gate; this is a fast local net.
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks not found on PATH — skipping local secret scan." >&2
+  echo "pre-commit: install it (https://github.com/gitleaks/gitleaks) or rely on CI's secret-scan job." >&2
+  exit 0
+fi
+
+gitleaks protect --staged --redact -v
+status=$?
+
+if [ "$status" -ne 0 ]; then
+  echo "" >&2
+  echo "pre-commit: gitleaks found a likely secret in staged changes. Commit blocked." >&2
+  echo "pre-commit: remove the secret, rotate it if it was ever real, and retry." >&2
+fi
+
+exit $status
