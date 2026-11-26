@@ -20,9 +20,9 @@ services:
     image: mongodb/mongodb-community-server:7.0-ubuntu2204
     profiles: [dev, test, prod]
     environment:
-      MONGO_INITDB_ROOT_USERNAME: marketplace
-      MONGO_INITDB_ROOT_PASSWORD: marketplace
-      MONGO_INITDB_DATABASE: marketplace
+      MONGODB_INITDB_ROOT_USERNAME: marketplace
+      MONGODB_INITDB_ROOT_PASSWORD: marketplace
+      MONGODB_INITDB_DATABASE: marketplace
     volumes:
       - mongodb_data:/data/db
     healthcheck:
