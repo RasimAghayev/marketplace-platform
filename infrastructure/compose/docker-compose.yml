@@ -158,7 +158,7 @@ services:
       retries: 3
 
   loki:
-    image: grafana/loki:2.9.0
+    image: grafana/loki:2.9.17
     profiles: [observability]
     ports:
       - "3100:3100"
